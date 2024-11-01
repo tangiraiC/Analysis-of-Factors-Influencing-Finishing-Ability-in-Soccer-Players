@@ -1,0 +1,137 @@
+---
+title: "ITEC-610 - Project 5: Hypothesis Testing with Multiple OLS Linear Regression"
+format: 
+    html:
+        embed-resources: true
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library (dplyr)
+library(tidyverse)
+library(dplyr)
+library(summarytools)  # for summarytools
+library(car)  # for recode
+library(PerformanceAnalytics)  # for chart.Correlation
+library(corrplot)  # for correlation plot
+library(Hmisc)     # for correlation plot
+library(stargazer) # for regression outputs
+#install.packages("ggplot2")
+#install.packages("gridExtra") # To combine plots if needed
+library(ggplot2)
+library(gridExtra)
+
+setwd("~/Documents/itec610/project5")
+fifa <-  read.csv("CLEAN_FIFA22_official_data.csv")
+```
+
+subsetting the dataset to elect
+
+```{r}
+fifasubset <- fifa |> filter(Club== "Manchester City" | Club =="Chelsea" |Club =="Liverpool" |Club =="Manchester United"|Club =="Arsenal"|Club =="Everton" )
+```
+
+checking for null values in the variables and removing them
+
+```{r}
+sum(is.na(fifasubset$HeadingAccuracy))
+sum(is.na(fifasubset$Crossing))
+sum(is.na(fifasubset$Dribbling))
+sum(is.na(fifasubset$BallControl))
+sum(is.na(fifasubset$Finishing))
+```
+
+### **Variable Analysis**
+
+```{r}
+headaccuracyanalysis <-  summarytools::descr(fifasubset$HeadingAccuracy);headaccuracyanalysis
+crossinganalysis <- summarytools::descr(fifasubset$Crossing);crossinganalysis
+dribblinganalysis <- summarytools::descr(fifasubset$Dribbling);dribblinganalysis
+ballcontrolanalysis <- summarytools::descr(fifasubset$BallControl);ballcontrolanalysis
+finishinganlysis <- summarytools::descr(fifasubset$Finishing);finishinganlysis
+```
+
+0.  **Specify & Perform a Multiple OLS Regression**.
+
+```{r}
+model <- lm(Finishing ~ HeadingAccuracy+Crossing+Dribbling+BallControl, data = fifasubset)
+summary(model)
+```
+
+**checking regression diagnostic plots to help identify any violations**
+
+```{r}
+plot(model)
+```
+
+**checking for multicollinearity**
+
+```{r}
+vif(model)
+
+```
+
+**Your regression model must be reported in a regression results table.  You are strongly encouraged to use the stargazer library.  See formatting instructions for more info.**
+
+```{r}
+stargazer(model, 
+          type = "text",  # Use "text" for console output; use "html" or "latex" for different formats
+          title = "Regression Results for Finishing Ability",
+          dep.var.labels = "Finishing Ability",
+          covariate.labels = c("Heading Accuracy", "Crossing", "Dribbling", "Ball Control"),
+          omit.stat = c("f", "ser"),  # Omit F-statistic and standard error from the table
+          star.cutoffs = c(0.05, 0.01, 0.001),  # Cutoffs for significance stars
+          align = TRUE,
+          digits = 3,  # Number of digits to display
+          notes = "Significance levels: * p < 0.05; ** p < 0.01; *** p < 0.001")
+```
+
+PQ Plots for the Variables
+
+```{r}
+# Plot 1: Dribbling vs Finishing Ability
+plot1 <- ggplot(fifasubset, aes(x = Dribbling, y = Finishing)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Dribbling vs Finishing Ability", x = "Dribbling", y = "Finishing Ability") +
+  theme_minimal()
+
+# Plot 2: Ball Control vs Finishing Ability
+plot2 <- ggplot(fifasubset, aes(x = BallControl, y = Finishing)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Ball Control vs Finishing Ability", x = "Ball Control", y = "Finishing Ability") +
+  theme_minimal()
+
+# Combine the two plots into one
+grid.arrange(plot1, plot2, ncol = 2)
+
+```
+
+```{r}
+# Plot 3: Heading Accuracy vs Finishing Ability
+plot3 <- ggplot(fifasubset, aes(x = HeadingAccuracy, y = Finishing)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "green") +
+  labs(title = "Heading Accuracy vs Finishing Ability", x = "Heading Accuracy", y = "Finishing Ability") +
+  theme_minimal()
+
+# Plot 4: Crossing vs Finishing Ability
+plot4 <- ggplot(fifasubset, aes(x = Crossing, y = Finishing)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "purple") +
+  labs(title = "Crossing vs Finishing Ability", x = "Crossing", y = "Finishing Ability") +
+  theme_minimal()
+
+# Combine the two plots into one
+grid.arrange(plot3, plot4, ncol = 2)
+
+```
